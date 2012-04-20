@@ -141,9 +141,9 @@ sub find {
     
     my $info;
     
-    foreach $storage (@storage_engines) {
-        my $info = $storage_engine->retrieve($sid);
-        last if defined $self;
+    foreach my $storage (@storage_engines) {
+        my $info = $storage->retrieve($sid);
+        last if defined $info;
     }
     
     if ($info) {
@@ -292,7 +292,7 @@ sub add_storage {
     }
     
     eval {
-        use $name;
+        require $name;
     };
         
     die "WWW::Session cannot load '$name' storage engine! Error : $@" if ($@);
@@ -338,12 +338,12 @@ sub serialization_engine {
     }
     
     eval {
-        use $name;
+        require $name;
     };
         
     die "WWW::Session cannot load '$name' serialization engine! Error : $@" if ($@);
     
-    my $serializer_object = $name->new($fields_modifiers,$options);
+    my $serializer_object = $name->new($fields_modifiers);
     
     if ($serializer_object) {
         $serializer = $serializer_object;
@@ -368,11 +368,11 @@ sub save {
     my $data = {
                 sid => $self->{sid},
                 expires => $self->{expires},
-    };
+               };
     
-    foreach my $field ( keys $self->{data} ) {
+    foreach my $field ( keys %{$self->{data}} ) {
         if (defined $fields_modifiers->{$field} && defined $fields_modifiers->{$field}->{inflate}) {
-            $data->{data}->{$field} = $fields_modifiers->{$field}->{inflate}->($session->{data}->{$field});
+            $data->{data}->{$field} = $fields_modifiers->{$field}->{inflate}->($self->{data}->{$field});
         }
         else {
             $data->{data}->{$field} = $self->{data}->{$field}
@@ -381,7 +381,7 @@ sub save {
     
     my $string = $serializer->serialize($data);
     
-    foreach $storage (@storage_engines) {
+    foreach my $storage (@storage_engines) {
         $storage->save($self->{sid},$self->{expires},$string);
     }
 }
@@ -399,7 +399,7 @@ sub load {
     
     my $self = $serializer->expand($string);
     
-    foreach my $field ( keys $self->{data} ) {
+    foreach my $field ( keys %{$self->{data}} ) {
         if (defined $fields_modifiers->{$field} && defined $fields_modifiers->{$field}->{deflate}) {
             $self->{data}->{$field} = $fields_modifiers->{$field}->{deflate}->($self->{data}->{$field});
         }

@@ -4,6 +4,8 @@ use 5.006;
 use strict;
 use warnings;
 
+use JSON;
+
 =head1 NAME
 
 WWW::Session::Serialization::JSON - Serialization engine for WWW::Session
