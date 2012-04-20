@@ -291,9 +291,7 @@ sub add_storage {
         $name = "WWW::Session::Storage::$name";
     }
     
-    eval {
-        require $name;
-    };
+    eval "use $name";
         
     die "WWW::Session cannot load '$name' storage engine! Error : $@" if ($@);
     
@@ -337,9 +335,7 @@ sub serialization_engine {
         $name = "WWW::Session::Serialization::$name";
     }
     
-    eval {
-        require $name;
-    };
+    eval "use $name";
         
     die "WWW::Session cannot load '$name' serialization engine! Error : $@" if ($@);
     
@@ -356,9 +352,9 @@ sub serialization_engine {
 
 =head1 Private methods
 
-=head2 serialize
+=head2 save
 
-Serializes a WWW::Session object and returns a sting containg inflated & serialized session data
+Serializes a WWW::Session object sends it to all storage engines for saving
 
 =cut
 
@@ -387,7 +383,7 @@ sub save {
 }
 
 
-=head2 deserialize
+=head2 load
 
 Deserializes a WWW::Session object from the given string and deflates all the fields that
 were inflated when the session was serialized

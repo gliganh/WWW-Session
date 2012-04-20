@@ -52,7 +52,7 @@ sub new {
     die "The specified path does not exist" unless -d $params->{path};
     
     my $self = {
-                path => $params->{path};
+                path => $params->{path}
                };
     
     bless $self, $class;
@@ -77,7 +77,6 @@ sub save {
     print $fh $string;
     
     close($fh);
-    
 }
 
 =head2 retrieve
