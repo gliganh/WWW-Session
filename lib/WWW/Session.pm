@@ -142,7 +142,7 @@ sub find {
     my $info;
     
     foreach my $storage (@storage_engines) {
-        my $info = $storage->retrieve($sid);
+        $info = $storage->retrieve($sid);
         last if defined $info;
     }
     
@@ -247,6 +247,17 @@ sub get {
     my ($self,$field) = @_;
     
     return $self->{data}->{$field};
+}
+
+=head2 sid
+
+Returns the session id associated with this session
+    
+=cut
+sub sid {
+    my ($self) = @_;
+    
+    return $self->{sid};
 }
 
 =head2 add_storage
@@ -401,7 +412,7 @@ sub load {
         }
     }
     
-    bless $class,$self;
+    bless $self,$class;
     
     return $self;
 }

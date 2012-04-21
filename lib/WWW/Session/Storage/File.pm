@@ -70,10 +70,8 @@ sub save {
     
     open(my $fh,">",$self->{path}."/".$sid);
     
-    local $\ = "\n";
-    
-    print $fh time();
-    print $fh $expires;
+    print $fh time() . "\n";
+    print $fh $expires . "\n";
     print $fh $string;
     
     close($fh);
@@ -108,7 +106,8 @@ sub retrieve {
     close($fh);
     
     #check if it didn't expire
-    if ( ($file_info[8] + $expires) < time() ) {
+    if ($expires != -1 && ($file_info[8] + $expires) < time() ) {
+		unlink $filename;
         return undef;
     }
     
