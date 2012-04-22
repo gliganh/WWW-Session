@@ -17,4 +17,3 @@ t/pod.t
 t/serialization-json.t
 t/session.t
 t/storage-file.t
-

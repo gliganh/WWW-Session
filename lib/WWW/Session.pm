@@ -52,14 +52,55 @@ Example:
     #returns the existing session if it exists, creates a new session if it doesn't
     my $session = WWW::Session->find_or_create($sid);  
 
+Using the session :
+
+=over 4
+
+=item * Settings values
+
+There are two ways you can save a value on the session :
+
+	$session->set('user',$user);
+	
+	or 
+	
+	$session->user($user);
+	
+If the requested field ("user" in the example above) already exists it will be 
+assigned the new value, if it doesn't it will be added.
+
+When you set a value for a field it will be validated first (see setup_field() ). 
+If the value doesn't pass validation the field will keep it's old value and the 
+set method will return 0. If everything goes well the set method will return 1.
+	
+=item * Retrieving values
+
+	my $user = $session->get('user');
+	
+	or
+	
+	my $user = $session->user();
+	
+If the requested field ("user" in the example above) already exists it will return 
+it's value, otherwise will return C<undef>
+
+=back
 
 We can automaticaly deflate/inflate certain informations when we store / retrieve
-from storage the session data:
+from storage the session data (see setup_field() for more details):
 
     WWW::Session->setup_field( 'user',
                                inflate => sub { return Some::Package->new( $_[0]->id() ) },
                                deflate => sub { $_[0]->id() }
                             );
+
+We can automaticaly validate certain informations when we store / retrieve
+from storage the session data (see setup_field() for more details):
+
+    WWW::Session->setup_field( 'age',
+                               filter => sub { $_[0] >= 18 }
+                             );
+
 
 Another way to initialize the module :
 
@@ -204,8 +245,8 @@ sub set {
     my $validated = 1;
     
     if ( exists $fields_modifiers->{$field} && defined $fields_modifiers->{$field}->{filter} ) {
-        
-        my $validated = 0; #we have a filter, check the value against the filter first
+	        
+        $validated = 0; #we have a filter, check the value against the filter first
         
         my $filter = $fields_modifiers->{$field}->{filter};
         
@@ -234,7 +275,7 @@ sub set {
         $self->{data}->{$field} = $value;
     }
     else {
-        warn "Value $value didn't failed validation for key $field";
+        warn "Value $value failed validation for key $field";
     }
     
     return $validated;
@@ -408,6 +449,99 @@ sub destroy {
 	}
 }
 
+
+=head2 setup_field 
+
+Sets up the filters, inflators and deflators for the given field
+
+=head3 deflators
+
+Deflators are passed as code refs. The only argument the deflator
+method receives is the value of the filed that it must be deflated and 
+it must return a single value (scalar, object or reference) that will be 
+asigned to the key.
+
+Example :
+
+	# if we have a user object (eg MyApp::User) we can deflate it like this
+	
+	WWW::Session->setup_field('user', deflate => sub { return $_[0]->id() } );
+
+=head3 inflators
+
+Inflators are passed as code refs. The only argument the inflator 
+method receives is the value of the filed that it must inflate and 
+it must return a single value (scalar, object or reference) that will be 
+asigned to the key.
+
+Example :
+
+	# if we have a user object (eg MyApp::User) we can inflate it like this
+
+	WWW::Session->setup_field('user',inflate => sub { return Some::Package->new( $_[0]->id() ) } );
+
+=head3 filters
+
+Filters can be used to ensure that the values from the session have the required values
+
+Filters can be :
+
+=over 4
+
+=item * array ref
+
+In this case when we call C<$session->set($field,$value)> the values will have to be one of the 
+values from the array ref , or the operation will fail
+
+Example :
+
+	#Check that the age is between 18 and 99
+	WWW::Session->setup_field('age',filter => [18..99] );
+
+=item * code ref 
+
+In this case the field value will be passed to the code ref as the only parameter. The code ref
+must return a true or false value. If it returns a false value the set() operation will fail
+
+Example :
+
+	#Check that the age is > 18
+	WWW::Session->setup_field('age',filter => sub { $_[0] > 18 } );
+
+=item * hash ref
+
+In this case the only key from the hash that is recognised is "isa" will will chek that the 
+given value has the types specified as the value for "isa"
+
+Example : 
+
+	#Check that the 'rights' field is an array
+	WWW::Session->setup_field('age',filter => { isa => "ARRAY" } );
+	
+	#Check that the 'user' field is an MyApp::User object
+	WWW::Session->setup_field('user',filter => { isa => "MyApp::User" } );
+
+=back
+
+Note: The entire setup for a field must be done in a single call to setup_field() or the previous 
+settings will be overwritten!
+
+Example :
+
+	WWW::Session->setup_field(
+							'user',
+							filter => { isa => "MyApp::User" },
+							deflate => sub { $_[0]->id() },
+							inflate => sub { return MyApp::User->find($_[0]) }
+							);
+
+=cut
+sub setup_field {
+	my ($self,$field,%settings) = @_;
+	
+	$fields_modifiers->{$field} = \%settings;
+}
+
 =head1 Private methods
 
 =head2 save
@@ -425,8 +559,8 @@ sub save {
                };
     
     foreach my $field ( keys %{$self->{data}} ) {
-        if (defined $fields_modifiers->{$field} && defined $fields_modifiers->{$field}->{inflate}) {
-            $data->{data}->{$field} = $fields_modifiers->{$field}->{inflate}->($self->{data}->{$field});
+        if (defined $fields_modifiers->{$field} && defined $fields_modifiers->{$field}->{deflate}) {
+            $data->{data}->{$field} = $fields_modifiers->{$field}->{deflate}->($self->{data}->{$field});
         }
         else {
             $data->{data}->{$field} = $self->{data}->{$field}
@@ -454,8 +588,8 @@ sub load {
     my $self = $serializer->expand($string);
     
     foreach my $field ( keys %{$self->{data}} ) {
-        if (defined $fields_modifiers->{$field} && defined $fields_modifiers->{$field}->{deflate}) {
-            $self->{data}->{$field} = $fields_modifiers->{$field}->{deflate}->($self->{data}->{$field});
+        if (defined $fields_modifiers->{$field} && defined $fields_modifiers->{$field}->{inflate}) {
+            $self->{data}->{$field} = $fields_modifiers->{$field}->{inflate}->($self->{data}->{$field});
         }
     }
     
@@ -471,6 +605,35 @@ Configures the module.
 =cut
 
 sub import {
+}
+
+=head2 AUTLOAD
+
+Allows us to get/set session data directly by calling the field name as a method
+
+Example:
+
+	my $user = $session->user(); #same as $user = $session->get('user');
+	
+	#or 
+	
+	$session->age(21); #same as $session->set('age',21);
+
+=cut
+our $AUTOLOAD;
+sub AUTOLOAD {
+	my $self = shift;
+	my $value = shift;
+
+	my $field = $AUTOLOAD;
+
+	$field =~ s/.*:://;
+
+	if (defined $value) {
+		$self->set($field,$value);
+	}
+	
+	return $self->get($field);
 }
 
 =head2 DESTROY
