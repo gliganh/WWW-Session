@@ -16,7 +16,6 @@ Version 0.01
 
 our $VERSION = '0.01';
 
-
 =head1 SYNOPSIS
 
 This module allows you to easily create sessions , store data in them and later
@@ -35,6 +34,9 @@ Example:
     
     #Set up the default expiration time (in seconds or -1 for never)
     WWW::Session->default_expiration_time(3600);
+
+	#Turn on autosave
+	WWW::Session->autosave(1);
     
     #and than ...
     
@@ -84,6 +86,7 @@ my @storage_engines = ();
 my $serializer = __PACKAGE__->serialization_engine('JSON');
 my $default_expiration = -1;
 my $fields_modifiers = {};
+my $autosave = 1;
 
 =head1 SUBROUTINES/METHODS
 
@@ -360,6 +363,50 @@ sub serialization_engine {
     }
 }
 
+=head2 autosave
+
+Turn on/off the autosave feature (on by default)
+
+If this feature is on the object will always be saved before beying destroyed
+
+Usage :
+
+	WWW::Session->autosave(1);
+
+=cut
+sub autosave {
+	my ($class,$value) = @_;
+	
+	$autosave = $value if defined $value;
+	
+	return $autosave;
+}
+
+
+=head2 destroy
+
+Completely removes all the data related to the current session
+
+NOTE: After calling destroy the session object will no longer be usable
+
+Usage :
+
+	$session->destroy();
+	
+=cut
+sub destroy {
+	
+	#save the session id fiers and undef the object before we delete it from
+	#storage to avoid autosave kikking in after we remove it from storage
+	
+	my $sid = $_[0]->sid();
+	
+	$_[0] = undef;
+		
+	foreach my $storage (@storage_engines) {
+		$storage->delete($sid);
+	}
+}
 
 =head1 Private methods
 
@@ -417,7 +464,6 @@ sub load {
     return $self;
 }
 
-
 =head2 import
 
 Configures the module.
@@ -425,6 +471,19 @@ Configures the module.
 =cut
 
 sub import {
+}
+
+=head2 DESTROY
+
+Autosaves the session object if necessary
+
+=cut
+sub DESTROY {
+	my $self = shift;
+	
+	if ($autosave) {
+		$self->save();
+	}
 }
 
 =head1 AUTHOR

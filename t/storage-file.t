@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 13;
+use Test::More tests => 16;
 
 use_ok('WWW::Session::Storage::File');
 
@@ -19,7 +19,9 @@ my $storage = WWW::Session::Storage::File->new({path => "."});
 	
 	is($rstring,$string,"String preserved");
 	ok(-f $sid,"File 1 still exists");
-	unlink($sid);
+
+	$storage->delete($sid);
+	ok(! -f $sid,"File 1 removed after destory");
 }
 
 {
@@ -35,7 +37,9 @@ my $storage = WWW::Session::Storage::File->new({path => "."});
 	
 	is($rstring,$string,"String2 preserved");
 	ok(-f $sid,"File 2 still exists");
-	unlink($sid);
+	
+	$storage->delete($sid);
+	ok(! -f $sid,"File 2 removed after destory");
 }
 
 
@@ -65,5 +69,7 @@ my $storage = WWW::Session::Storage::File->new({path => "."});
 	
 	is($rstring,'Test 123 îâăȚȘș',"String4 (utf8) preserved");
 	ok(-f $sid,"File 4 still exists");
-	unlink($sid);
+	
+	$storage->delete($sid);
+	ok(! -f $sid,"File 4 removed after destory");
 }

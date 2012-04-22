@@ -70,7 +70,6 @@ sub save {
     
     open(my $fh,">",$self->{path}."/".$sid);
     
-    print $fh time() . "\n";
     print $fh $expires . "\n";
     print $fh $string;
     
@@ -96,7 +95,6 @@ sub retrieve {
     
     local $/ = "\n";
     
-    my $time = readline($fh);
     my $expires= readline($fh);
     
     local $/ = undef;
@@ -112,6 +110,21 @@ sub retrieve {
     }
     
     return $string;
+}
+
+=head2 delete
+
+Completely removes the session data for the given session id
+
+=cut
+sub delete {
+	my ($self,$sid) = @_;
+	
+	my $filename = $self->{path}."/".$sid;
+	
+	if (-f $filename) {
+		unlink($filename);
+	}
 }
 
 =head1 AUTHOR

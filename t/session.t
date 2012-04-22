@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 29;
+use Test::More tests => 36;
 use Test::Exception;
 
 use_ok('WWW::Session');
@@ -85,5 +85,53 @@ lives_ok { WWW::Session->serialization_engine('JSON') } 'JSON serialization conf
 
 	is($session2->get('a'),3,'Value for a from session2 is correct');
 	is($session2->get('b'),2,'Value for b from session2 is correct');
+}
+
+
+{ #autosave - on
+	note("tests for autosave(1)");
+	
+	#see it if works with autosave enabled 
+	{
+		my $session = WWW::Session->new('autosave1',{a => 1, b => 2});
+		ok(defined $session,"Session sample 1 created");
+	}
+	
+	my $session2 = WWW::Session->find('autosave1');
+	ok(defined $session2,"Session found after autosavesave");
+}
+
+{ #autosave - off
+	note("tests for autosave(0)");
+	
+	WWW::Session->autosave(0);
+	#see it if works with autosave enabled 
+	{
+		my $session = WWW::Session->new('autosave2',{a => 1, b => 2});
+		ok(defined $session,"Session sample 2 created");
+	}
+	
+	my $session2 = WWW::Session->find('autosave2');
+	is($session2,undef,"Session not found with autosavesave disabled");
+	
+	WWW::Session->autosave(1);
+}
+
+{ #destroy
+	note("tests for autosave(1)");
+	
+	#see it if works with autosave enabled 
+	my $session = WWW::Session->new('autosave3',{a => 1, b => 2});
+	ok(defined $session,"Session sample31 created");
+	
+	$session->save();
+	
+	$session->destroy();
+	
+	is($session,undef,"Session object destroyed by destroy()");
+	
+	$session = WWW::Session->find('autosave3');
+	
+	is($session,undef,"Session not found after destroy()");
 }
 
