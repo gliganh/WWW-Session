@@ -113,5 +113,5 @@ SKIP: {
 		is($rstring,undef,"Session data removed after destory()");
 	}
 	
-	#$dbh->do("DROP TABLE www_session_test_table");
+	$dbh->do("DROP TABLE www_session_test_table");
 }
