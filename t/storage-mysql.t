@@ -11,7 +11,10 @@ $have_db = 0 if $@;
 SKIP: {
 	skip "DBI is not installed", 13 unless $have_db;
 	
-	my $dbh = DBI->connect("DBI:mysql:host=127.0.0.1:db=test","root","");
+	my $dbh;
+    eval {
+        $dbh = DBI->connect("DBI:mysql:host=127.0.0.1:db=test","root","");
+    };
 
  	skip "Cannot connect properly", 13 unless defined $dbh;
 	
