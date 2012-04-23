@@ -30,6 +30,8 @@ lives_ok { WWW::Session->serialization_engine('JSON') } 'JSON serialization conf
 
 	is($session2->get('a'),1,'Value for a from session2 is correct');
 	is($session2->get('b'),2,'Value for b from session2 is correct');
+	
+	$session2->destroy();
 }
 
 
@@ -56,6 +58,8 @@ lives_ok { WWW::Session->serialization_engine('JSON') } 'JSON serialization conf
 	is($session2->get('a'),3,'Value for a from session2 is correct');
 	is($session2->get('b'),2,'Value for b from session2 is correct');
 	is($session2->get('c'),4,'Value for c from session2 is correct');
+	
+	$session2->destroy();
 }
 
 

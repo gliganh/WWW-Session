@@ -1,9 +1,7 @@
 Changes
 lib/WWW/Session.pm
-lib/WWW/Session/Serialization.pm
 lib/WWW/Session/Serialization/JSON.pm
 lib/WWW/Session/Serialization/Storable.pm
-lib/WWW/Session/Storage.pm
 lib/WWW/Session/Storage/File.pm
 lib/WWW/Session/Storage/Memcached.pm
 lib/WWW/Session/Storage/MySQL.pm

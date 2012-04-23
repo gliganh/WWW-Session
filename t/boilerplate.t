@@ -3,7 +3,7 @@
 use 5.006;
 use strict;
 use warnings;
-use Test::More tests => 10;
+use Test::More tests => 8;
 
 sub not_in_file_ok {
     my ($filename, %regex) = @_;
@@ -53,8 +53,6 @@ TODO: {
   module_boilerplate_ok('lib/WWW/Session/Storage/File.pm');
   module_boilerplate_ok('lib/WWW/Session/Storage/MySQL.pm');
   module_boilerplate_ok('lib/WWW/Session/Storage/Memcached.pm');
-  module_boilerplate_ok('lib/WWW/Session/Storage.pm');
-  module_boilerplate_ok('lib/WWW/Session/Serialization.pm');
   module_boilerplate_ok('lib/WWW/Session/Serialization/JSON.pm');
   module_boilerplate_ok('lib/WWW/Session/Serialization/Storable.pm');
 

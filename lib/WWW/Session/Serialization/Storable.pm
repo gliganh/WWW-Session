@@ -4,9 +4,11 @@ use 5.006;
 use strict;
 use warnings;
 
+use Storable qw(freeze thaw);
+
 =head1 NAME
 
-WWW::Session::Serialization::Storable - The great new WWW::Session::Serialization::Storable!
+WWW::Session::Serialization::Storable - Serialization module for WWW::Session with Storable backend
 
 =head1 VERSION
 
@@ -19,36 +21,69 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+This module handles serialization for WWW::Session objects using Storable. 
 
-Perhaps a little code snippet.
+This module can serialize complex structures wich contain objects.
+
+The object implements two main methods : serialize() and expand()
 
     use WWW::Session::Serialization::Storable;
 
     my $foo = WWW::Session::Serialization::Storable->new();
     ...
 
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+	$string = $serializer->serialize($structure);
+    
+    ...
+    $structure = $serializer->expand($string);
 
 =head1 SUBROUTINES/METHODS
 
-=head2 function1
+=head2 new
+
+Creates a new WWW::Session::Serialization::Storable object
+
+Usage :
+
+    my $serializer = WWW::Session::Serialization::Storable->new();
+    
+No arguments required.
 
 =cut
 
-sub function1 {
+sub new {
+    my $class = shift;
+    
+    my $self = {};
+    
+    bless $self,$class;
+    
+    return $self;
 }
 
-=head2 function2
+=head2 serialize
+
+Serializes a structure and returns a binary string containing all the data
 
 =cut
 
-sub function2 {
+sub serialize {
+    my ($self,$data) = @_;
+    
+    return freeze($data);
 }
 
+
+=head2 expand
+
+Deserializes binary string and returns a structure containing all the data
+
+=cut
+sub expand {
+    my ($self,$string) = @_;
+    
+    return thaw($string);
+}
 =head1 AUTHOR
 
 Gligan Calin Horea, C<< <gliganh at gmail.com> >>
