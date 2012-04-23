@@ -19,7 +19,7 @@ our $VERSION = '0.01';
 =head1 SYNOPSIS
 
 This module allows you to easily create sessions , store data in them and later
-retrieve that information, using mutiple storage backends
+retrieve that information, using multiple storage backends
 
 Example: 
 
@@ -128,6 +128,40 @@ my $serializer = __PACKAGE__->serialization_engine('JSON');
 my $default_expiration = -1;
 my $fields_modifiers = {};
 my $autosave = 1;
+
+=head1 Storing complex structures that contain objects
+
+The default serialization engine is JSON, but JSON can't serialize objects by default,
+you will have to write more code to accomplish that. If your session data data contains 
+objects you can take one of the following approaches :
+
+=over 4 
+
+=item * Use inflate/deflate (recommended)
+
+	# if we have a user object (eg MyApp::User) we can deflate it like this
+	
+	WWW::Session->setup_field('user', deflate => sub { return $_[0]->id() } );
+	
+	#and inflate it back like this
+	
+	WWW::Session->setup_field('user',inflate => sub { return Some::Package->new( $_[0]->id() ) } );
+	
+This method is cleaner, it reduces the size of the session object when stored, and it ensures
+us that if the object data changed since we saved it, this changes will be reflected in the 
+object when we retrieve it from the database (usefull for database result objects)
+
+=item * Change the serialization module to 'Storable'
+
+The 'Storable' serialization engine can handle object without any additional changes
+
+	WWW::Session->serialization_engine('Storable');
+
+Note : The perl Storable module is not very compatible between different version, so sharing data 
+between multiple machines could cause problems. We recommad using the 'JSON' engine with 
+inflate/defate (described above);
+
+=back
 
 =head1 SUBROUTINES/METHODS
 
