@@ -2,7 +2,7 @@
 
 use Test::More tests => 13;
 
-my $have_memcache = 1;
+my $have_db = 1;
 
 eval "use DBI";
 
@@ -11,9 +11,9 @@ $have_db = 0 if $@;
 SKIP: {
 	skip "DBI is not installed", 13 unless $have_db;
 	
-	my $dbh = DBI->connect("DBD::mysql:127.0.0.1:test","root","");
+	my $dbh = DBI->connect("DBI:mysql:host=127.0.0.1:db=test","root","");
 
- 	skip "Cannot connect properly", 13 unless $dbh->is_connected();
+ 	skip "Cannot connect properly", 13 unless defined $dbh;
 	
 	$dbh->do("DROP TABLE www_session_test_table");
 
@@ -31,7 +31,7 @@ SKIP: {
 	
 	use_ok('WWW::Session::Storage::MySQL');
 
-	my $storage = WWW::Session::Storage::Memcached->new({
+	my $storage = WWW::Session::Storage::MySQL->new({
 							dbh => $dbh,
 							table => "www_session_test_table",
 							fields => {
@@ -113,5 +113,5 @@ SKIP: {
 		is($rstring,undef,"Session data removed after destory()");
 	}
 	
-	$dbh->do("DROP TABLE www_session_test_table");
+	#$dbh->do("DROP TABLE www_session_test_table");
 }

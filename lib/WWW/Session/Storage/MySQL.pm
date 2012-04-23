@@ -75,8 +75,8 @@ sub new {
 	
 	my $self = {
 				dbh => $params->{dbh},
-				table => $params->{dbh}->quote($params->{table}),
-				fields => { map { $_ => $params->{dbh}->quote($params->{fields}->{$_}) } keys %{$params->{fields}}},
+				table => $params->{table},
+				fields => $params->{fields},
 	};
 	
 	bless $self,$class;
@@ -114,7 +114,7 @@ the string containing the serialized data
 sub retrieve {
     my ($self,$sid) = @_;
 	
-	my $query = sprintf('SELECT %s as sid,%s as data,UNIX_TIMESPAMP(%s) as expires FROM %s WHERE %s=?',
+	my $query = sprintf('SELECT %s as sid,%s as data,UNIX_TIMESTAMP(%s) as expires FROM %s WHERE %s=?',
 						@{$self->{fields}}{qw(sid data expires)},
 						$self->{table},
 						$self->{fields}->{sid}
@@ -168,7 +168,7 @@ sub _check_table_structure {
 	my $sth = $self->{dbh}->prepare("DESCRIBE ".$self->{table});
 	$sth->execute();
 	
-	my $table_fields = $sth->selectall_hashref('Field');
+	my $table_fields = $sth->fetchall_hashref('Field');
 	
 	die "The table structure doesn't match the field names you specified!" 
 				unless  exists $table_fields->{$self->{fields}->{sid}} &&
