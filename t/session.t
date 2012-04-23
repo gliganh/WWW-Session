@@ -32,6 +32,7 @@ lives_ok { WWW::Session->serialization_engine('JSON') } 'JSON serialization conf
 	is($session2->get('b'),2,'Value for b from session2 is correct');
 	
 	$session2->destroy();
+	$session->destroy();
 }
 
 
@@ -60,6 +61,7 @@ lives_ok { WWW::Session->serialization_engine('JSON') } 'JSON serialization conf
 	is($session2->get('c'),4,'Value for c from session2 is correct');
 	
 	$session2->destroy();
+	$session->destroy();
 }
 
 
@@ -91,6 +93,7 @@ lives_ok { WWW::Session->serialization_engine('JSON') } 'JSON serialization conf
 	is($session2->get('b'),2,'Value for b from session2 is correct');
 	
 	$session2->destroy();
+	$session->destroy();
 }
 
 
@@ -197,6 +200,7 @@ lives_ok { WWW::Session->serialization_engine('JSON') } 'JSON serialization conf
 	ok(! $session2->set('user','string'),'User must be an object');
 	
 	$session2->destroy();
+	$session->destroy();
 }
 
 
