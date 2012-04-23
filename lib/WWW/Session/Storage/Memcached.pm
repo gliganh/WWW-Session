@@ -21,7 +21,7 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-This module is used for storring serialized WWW::Session objects
+This module is used for storring serialized WWW::Session objects in memcached
 
 Usage : 
 
