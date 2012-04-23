@@ -4,9 +4,11 @@ use 5.006;
 use strict;
 use warnings;
 
+use Cache::Memcached;
+
 =head1 NAME
 
-WWW::Session::Storage::Memcached - The great new WWW::Session::Storage::Memcached!
+WWW::Session::Storage::Memcached - Memcached storage for WWW::Session
 
 =head1 VERSION
 
@@ -19,34 +21,81 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+This module is used for storring serialized WWW::Session objects
 
-Perhaps a little code snippet.
+Usage : 
 
     use WWW::Session::Storage::Memcached;
 
-    my $foo = WWW::Session::Storage::Memcached->new();
+    my $storage = WWW::Session::Storage::Memcached->new({ servers => ["127.0.0.1:11211"] });
     ...
-
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+    
+    $storage->save($session_id,$expires,$serialized_data);
+    
+    my $serialized_data = $storage->retrive($session_id);
 
 =head1 SUBROUTINES/METHODS
 
-=head2 function1
+=head2 new
+
+Creates a new WWW::Session::Storage::File object
+
+This method accepts only one argument, a hashref that contains all the options that will be
+passed to the Cache::Memcached module. The mendatory key in the hash is "servers" wihich must
+be an array ref containing all the C<memcached> servers we want to use.
+
+See Cache::Memcached module for more details on available options
+
+Example :
+
+	my $storage = WWW::Session::Storage::Memcached->new({ servers => ["127.0.0.1:11211"] });
 
 =cut
-
-sub function1 {
+sub new {
+	my $class = shift;
+	my $params = shift;
+	
+	my $self = { options => $params,
+				 memcached => Cache::Memcached->new($params),
+		 		};
+		
+	bless $self, $class;
+	
+	return $self;
 }
 
-=head2 function2
+=head2 save
+
+Stores the given information into the file
 
 =cut
+sub save {
+    my ($self,$sid,$expires,$string) = @_;
+    
+ 	return $self->{memcached}->set($sid,$string,$expires == -1 ? undef : $expires );
+}
 
-sub function2 {
+=head2 retrieve
+
+Retrieves the informations for a session, verifies that it's not expired and returns
+the string containing the serialized data
+
+=cut
+sub retrieve {
+    my ($self,$sid) = @_;
+
+	return $self->{memcached}->get($sid);
+}
+
+=head2 delete
+
+Completely removes the session data for the given session id
+
+=cut
+sub delete {
+	my ($self,$sid) = @_;
+
+	$self->{memcached}->delete($sid);
 }
 
 =head1 AUTHOR
