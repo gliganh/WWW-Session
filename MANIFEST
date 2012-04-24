@@ -15,6 +15,7 @@ t/pod.t
 t/serialization-json.t
 t/serialization-storable.t
 t/session.t
+t/session-tie.t
 t/storage-file.t
 t/storage-memcached.t
 t/storage-mysql.t
