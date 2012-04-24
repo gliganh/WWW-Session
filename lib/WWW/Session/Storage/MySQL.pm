@@ -10,11 +10,11 @@ WWW::Session::Storage::MySQL - MySQL storage for WWW::Session
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 =head1 SYNOPSIS
@@ -26,14 +26,14 @@ Usage :
     use WWW::Session::Storage::MySQL;
 
     my $storage = WWW::Session::Storage::MySQL->new({ 
-								dbh => $dbh,
-								table => 'sessions',
-								fields => {
-									sid => 'session_id',
-									expires => 'expires',
-									data => 'data'
-								}
-				});
+                                dbh => $dbh,
+                                table => 'sessions',
+                                fields => {
+                                    sid => 'session_id',
+                                    expires => 'expires',
+                                    data => 'data'
+                                }
+                });
     ...
     
     $storage->save($session_id,$expires,$serialized_data);
@@ -71,19 +71,19 @@ This method accepts only one argument, a hashref that must contain the fallowing
 =cut
 
 sub new {
-	my ($class,$params) = @_;
-	
-	my $self = {
-				dbh => $params->{dbh},
-				table => $params->{table},
-				fields => $params->{fields},
-	};
-	
-	bless $self,$class;
-	
-	$self->_check_table_structure();
-	
-	return $self;
+    my ($class,$params) = @_;
+    
+    my $self = {
+                dbh => $params->{dbh},
+                table => $params->{table},
+                fields => $params->{fields},
+    };
+    
+    bless $self,$class;
+    
+    $self->_check_table_structure();
+    
+    return $self;
 }
 
 =head2 save
@@ -95,14 +95,14 @@ sub save {
     my ($self,$sid,$expires,$string) = @_;
 
     my $query = sprintf('INSERT INTO %s SET %s=?, %s=?,%s=FROM_UNIXTIME(?)',
-						$self->{table},
-						@{$self->{fields}}{qw(sid data expires)}
-						);
+                        $self->{table},
+                        @{$self->{fields}}{qw(sid data expires)}
+                        );
 
     my $sth = $self->{dbh}->prepare($query);
-	my $rv = $sth->execute($sid,$string,time() + ( $expires == -1 ? 60*60*24*365*20 : $expires ) );
-	
-	return $rv;
+    my $rv = $sth->execute($sid,$string,time() + ( $expires == -1 ? 60*60*24*365*20 : $expires ) );
+    
+    return $rv;
 }
 
 =head2 retrieve
@@ -113,26 +113,26 @@ the string containing the serialized data
 =cut
 sub retrieve {
     my ($self,$sid) = @_;
-	
-	my $query = sprintf('SELECT %s as sid,%s as data,UNIX_TIMESTAMP(%s) as expires FROM %s WHERE %s=?',
-						@{$self->{fields}}{qw(sid data expires)},
-						$self->{table},
-						$self->{fields}->{sid}
-						);
+    
+    my $query = sprintf('SELECT %s as sid,%s as data,UNIX_TIMESTAMP(%s) as expires FROM %s WHERE %s=?',
+                        @{$self->{fields}}{qw(sid data expires)},
+                        $self->{table},
+                        $self->{fields}->{sid}
+                        );
 
     my $sth = $self->{dbh}->prepare($query);
-	$sth->execute($sid);
-	
-	my $info = $sth->fetchrow_hashref();
-	
-	return undef unless defined $info;
-	
-	if ( $info->{expires} < time() ) {
-		$self->delete($sid);
-		return undef;
-	}
-	
-	return $info->{data};
+    $sth->execute($sid);
+    
+    my $info = $sth->fetchrow_hashref();
+    
+    return undef unless defined $info;
+    
+    if ( $info->{expires} < time() ) {
+        $self->delete($sid);
+        return undef;
+    }
+    
+    return $info->{data};
 
 }
 
@@ -142,17 +142,17 @@ Completely removes the session data for the given session id
 
 =cut
 sub delete {
-	my ($self,$sid) = @_;
+    my ($self,$sid) = @_;
 
-	my $query = sprintf('DELETE FROM %s WHERE %s=?',
-						$self->{table},
-						$self->{fields}->{sid}
-						);
+    my $query = sprintf('DELETE FROM %s WHERE %s=?',
+                        $self->{table},
+                        $self->{fields}->{sid}
+                        );
 
     my $sth = $self->{dbh}->prepare($query);
-	my $rv = $sth->execute($sid);
+    my $rv = $sth->execute($sid);
 
-	return $rv;
+    return $rv;
 }
 
 =head1 Private methods
@@ -163,17 +163,17 @@ Tries to determine if the expires field is UnixTimestamp or DateTime
 
 =cut
 sub _check_table_structure {
-	my $self = shift;
-	
-	my $sth = $self->{dbh}->prepare("DESCRIBE ".$self->{table});
-	$sth->execute();
-	
-	my $table_fields = $sth->fetchall_hashref('Field');
-	
-	die "The table structure doesn't match the field names you specified!" 
-				unless  exists $table_fields->{$self->{fields}->{sid}} &&
-						exists $table_fields->{$self->{fields}->{expires}} &&
-						exists $table_fields->{$self->{fields}->{data}};
+    my $self = shift;
+    
+    my $sth = $self->{dbh}->prepare("DESCRIBE ".$self->{table});
+    $sth->execute();
+    
+    my $table_fields = $sth->fetchall_hashref('Field');
+    
+    die "The table structure doesn't match the field names you specified!" 
+                unless  exists $table_fields->{$self->{fields}->{sid}} &&
+                        exists $table_fields->{$self->{fields}->{expires}} &&
+                        exists $table_fields->{$self->{fields}->{data}};
 }
 
 =head1 AUTHOR

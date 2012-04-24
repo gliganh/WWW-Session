@@ -12,11 +12,11 @@ WWW::Session::Serialization::Storable - Serialization module for WWW::Session wi
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 =head1 SYNOPSIS
@@ -32,7 +32,7 @@ The object implements two main methods : serialize() and expand()
     my $foo = WWW::Session::Serialization::Storable->new();
     ...
 
-	$string = $serializer->serialize($structure);
+    $string = $serializer->serialize($structure);
     
     ...
     $structure = $serializer->expand($string);

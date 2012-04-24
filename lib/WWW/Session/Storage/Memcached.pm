@@ -12,11 +12,11 @@ WWW::Session::Storage::Memcached - Memcached storage for WWW::Session
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 =head1 SYNOPSIS
@@ -48,20 +48,20 @@ See Cache::Memcached module for more details on available options
 
 Example :
 
-	my $storage = WWW::Session::Storage::Memcached->new({ servers => ["127.0.0.1:11211"] });
+    my $storage = WWW::Session::Storage::Memcached->new({ servers => ["127.0.0.1:11211"] });
 
 =cut
 sub new {
-	my $class = shift;
-	my $params = shift;
-	
-	my $self = { options => $params,
-				 memcached => Cache::Memcached->new($params),
-		 		};
-		
-	bless $self, $class;
-	
-	return $self;
+    my $class = shift;
+    my $params = shift;
+    
+    my $self = { options => $params,
+                 memcached => Cache::Memcached->new($params),
+                };
+        
+    bless $self, $class;
+    
+    return $self;
 }
 
 =head2 save
@@ -72,7 +72,7 @@ Stores the given information into the file
 sub save {
     my ($self,$sid,$expires,$string) = @_;
     
- 	return $self->{memcached}->set($sid,$string,$expires == -1 ? undef : $expires );
+    return $self->{memcached}->set($sid,$string,$expires == -1 ? undef : $expires );
 }
 
 =head2 retrieve
@@ -84,7 +84,7 @@ the string containing the serialized data
 sub retrieve {
     my ($self,$sid) = @_;
 
-	return $self->{memcached}->get($sid);
+    return $self->{memcached}->get($sid);
 }
 
 =head2 delete
@@ -93,9 +93,9 @@ Completely removes the session data for the given session id
 
 =cut
 sub delete {
-	my ($self,$sid) = @_;
+    my ($self,$sid) = @_;
 
-	$self->{memcached}->delete($sid);
+    $self->{memcached}->delete($sid);
 }
 
 =head1 AUTHOR

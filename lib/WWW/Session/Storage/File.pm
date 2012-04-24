@@ -10,11 +10,11 @@ WWW::Session::Storage::File - File storage engine for WWW::Session
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 =head1 SYNOPSIS
@@ -105,7 +105,7 @@ sub retrieve {
     
     #check if it didn't expire
     if ($expires != -1 && ($file_info[8] + $expires) < time() ) {
-		unlink $filename;
+        unlink $filename;
         return undef;
     }
     
@@ -118,13 +118,13 @@ Completely removes the session data for the given session id
 
 =cut
 sub delete {
-	my ($self,$sid) = @_;
-	
-	my $filename = $self->{path}."/".$sid;
-	
-	if (-f $filename) {
-		unlink($filename);
-	}
+    my ($self,$sid) = @_;
+    
+    my $filename = $self->{path}."/".$sid;
+    
+    if (-f $filename) {
+        unlink($filename);
+    }
 }
 
 =head1 AUTHOR
