@@ -198,6 +198,7 @@ sub new {
                 data    => {},
                 expires => $expires,
                 sid     => $sid,
+				changed => {},
                };
     
     bless $self, $class;
@@ -225,7 +226,9 @@ sub find {
     }
     
     if ($info) {
-        return $class->load($info);
+        my $session = $class->load($info);
+		$session->{changed} = {};
+		return $session;
     }
     
     return undef;
@@ -317,6 +320,7 @@ sub set {
     
     if ($validated) {
         $self->{data}->{$field} = $value;
+		$self->{changed}->{$field} = 1;
     }
     else {
         warn "Value $value failed validation for key $field";
@@ -759,7 +763,7 @@ sub import {
 	}
 }
 
-=head2 AUTLOAD
+=head2 Fast access to session keys
 
 Allows us to get/set session data directly by calling the field name as a method
 
@@ -789,16 +793,43 @@ sub AUTOLOAD {
 	return $self->get($field);
 }
 
-=head2 DESTROY
+=head2 Autosave
 
-Autosaves the session object if necessary
+If you set autosave to 1 the session will be saved before the object is 
+destroyed if any data has changed
 
+BE CAREFULL : If you store complex structures only the changes made to direct 
+session keys will be detected. 
+
+Example :
+
+	#this change will be detected because it affects a direct session attribute
+	$session->age(21); 
+
+	#this changes won't be detected :
+	my $user = $session->user();
+	$user->{age} = 21;
+	
+You have two choices :
+
+=over 4
+
+=item 1 Make a change that can be detected
+
+	$session->some_random_field( time() );
+	
+=item 2 Save the session manually
+
+	$session->save();
+	
+=back
+	
 =cut
 
 sub DESTROY {
 	my $self = shift;
 	
-	if ($autosave) {
+	if ($autosave && scalar(keys %{$self->{changed}})) {
 		$self->save();
 	}
 }
