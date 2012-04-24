@@ -147,9 +147,9 @@ objects you can take one of the following approaches :
 	
 	WWW::Session->setup_field('user',inflate => sub { return Some::Package->new( $_[0]->id() ) } );
 	
-This method is cleaner, it reduces the size of the session object when stored, and it ensures
-us that if the object data changed since we saved it, this changes will be reflected in the 
-object when we retrieve it from the database (usefull for database result objects)
+This method even thow it's slower, it reduces the size of the session object when stored, and 
+it ensures that if the object data changed since we saved it, this changes will be reflected in the 
+object when we retrieve restore it (usefull for database result objects)
 
 =item * Change the serialization module to 'Storable'
 
@@ -268,7 +268,17 @@ sub find_or_create {
 
 Adds/sets a new value for the given field
 
+Usage :
+
+	$session->set('user',$user);
+	
+The values can also be set by calling the name of the field you want to set 
+as a method :
+
+	$session->user($user);
+
 =cut
+
 sub set {
     my ($self,$field,$value) = @_;
     
@@ -319,12 +329,37 @@ sub set {
 =head2 get
 
 Retrieves the value of the given key from the session object
+
+Usage :
+
+	my $user = $session->get('user');
+	
+You can also use the name of the field you want to retrieve as a method.
+The above call does the same as :
+
+	my $user = $session->user();
     
 =cut
+
 sub get {
     my ($self,$field) = @_;
     
     return $self->{data}->{$field};
+}
+
+=head2 delete
+
+Removes the given key from the session data
+
+Usage :
+
+	$session->delete('user');
+
+=cut
+sub delete {
+	my ($self,$key) = @_;
+	
+	return delete $self->{data}->{$key};
 }
 
 =head2 sid
@@ -332,10 +367,27 @@ sub get {
 Returns the session id associated with this session
     
 =cut
+
 sub sid {
     my ($self) = @_;
     
     return $self->{sid};
+}
+
+=head2 expires
+
+Getter/Setter for the expiration time of this session
+    
+=cut
+
+sub expires {
+    my ($self,$value) = @_;
+
+    if (defined $value) {
+		$self->{expires} = $value;
+	}
+
+    return $self->{expires};
 }
 
 =head2 add_storage
@@ -371,6 +423,7 @@ Example :
 See each storage module for aditional details
 
 =cut
+
 sub add_storage {
     my ($class,$name,$options) = @_;
     
@@ -417,6 +470,7 @@ are synonyms
 =back
 
 =cut
+
 sub serialization_engine {
     my ($class,$name) = @_;
     
@@ -449,6 +503,7 @@ Usage :
 	WWW::Session->autosave(1);
 
 =cut
+
 sub autosave {
 	my ($class,$value) = @_;
 	
@@ -457,6 +512,25 @@ sub autosave {
 	return $autosave;
 }
 
+=head2 default_expiration_time
+
+Turn on/off the autosave feature (on by default)
+
+Usage :
+
+	WWW::Session->autosave(1);
+	
+=cut
+
+sub default_expiration_time {
+	my ($class,$value) = @_;
+	
+	if (defined $value) {
+		$default_expiration = $value;
+	}
+	
+	return $default_expiration;
+}
 
 =head2 destroy
 
@@ -469,6 +543,7 @@ Usage :
 	$session->destroy();
 	
 =cut
+
 sub destroy {
 	
 	#save the session id fiers and undef the object before we delete it from
@@ -570,6 +645,7 @@ Example :
 							);
 
 =cut
+
 sub setup_field {
 	my ($self,$field,%settings) = @_;
 	
@@ -634,11 +710,53 @@ sub load {
 
 =head2 import
 
-Configures the module.
+Allows us to configure all the module options in one line 
+
+Example :
+
+	use WWW::Session storage => [ 
+								'File' => { path => '/tmp/sessions'},
+                              	'Memcached' => { servers => ['127.0.0.1'] }
+                            	],
+                 	 serialization => 'Storable',
+                 	 expires => 3600,
+                 	 fields => {
+                    			user => {
+                        			inflate => sub { return Some::Package->new( $_[0]->id() ) },
+                        			deflate => sub { $_[0]->id() },
+                    			},
+								age => {
+									filter => [21..99],
+								}
+                 	 },
+					 autosave => 1;
 
 =cut
 
 sub import {
+	my ($class, %params) = @_;
+	
+	if (defined $params{storage}) {
+		while ( scalar(@{$params{storage}}) ) {
+			my $engine = shift @{$params{storage}};
+			my $options = shift @{$params{storage}};
+			$class->add_storage($engine,$options);
+		}
+	}
+	if (defined $params{serialization}) {
+		$class->serialization_engine($params{serialization});
+	}
+	if (defined $params{expires}) {
+		$class->default_expiration_time($params{expires});
+	}
+	if (defined $params{autosave}) {
+		$class->autosave($params{autosave});
+	}
+	if (defined $params{fields}) {
+		foreach my $field (keys %{$params{fields}}) {
+			$class->setup_field($field,$params{fields}->{$field});
+		}
+	}
 }
 
 =head2 AUTLOAD
@@ -654,6 +772,7 @@ Example:
 	$session->age(21); #same as $session->set('age',21);
 
 =cut
+
 our $AUTOLOAD;
 sub AUTOLOAD {
 	my $self = shift;
@@ -675,12 +794,88 @@ sub AUTOLOAD {
 Autosaves the session object if necessary
 
 =cut
+
 sub DESTROY {
 	my $self = shift;
 	
 	if ($autosave) {
 		$self->save();
 	}
+}
+
+=head1 TIE INTERFACE
+
+The WWW::Session objects can be tied to hashes to make them easier to use
+
+Example :
+
+	my %session;
+	
+	tie %session, WWW::Session, 'session_id', {user => $user, authenticated => 1};
+	
+	...
+	my $user = $session{user};
+
+	...
+	$session{authenticated} = 0;
+	delete $session{user};
+
+=cut
+
+sub TIEHASH {
+	my ($class,@params) = @_;
+	
+	return $class->new(@params);
+}
+
+sub STORE {
+	my ($self,$key,$value) = @_;
+	
+	$self->set($key,$value);
+}
+
+sub FETCH {
+	my ($self,$key) = @_;
+	
+	return $self->get($key);
+}
+
+sub DELETE {
+	my ($self,$key) = @_;
+	
+	$self->delete($key);
+}
+
+sub CLEAR {
+	my ($self) = @_;
+	
+	$self->{data} = {};
+}
+
+sub EXISTS {
+	my ($self,$key) = @_;
+	
+	return exists $self->{data}->{$key};
+}
+
+sub FIRSTKEY {
+	my ($self) = @_;
+	
+	my $a = keys %{ $self->{data} };
+	
+	each %{ $self->{data} };
+}
+
+sub NEXTKEY {
+	my ($self) = @_;
+	
+	return each %{ $self->{data} };
+}
+
+sub SCALAR {
+	my ($self) = @_;
+	
+	return scalar %{ $self->{data} };
 }
 
 =head1 AUTHOR
