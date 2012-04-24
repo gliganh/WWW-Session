@@ -2,4 +2,8 @@ Revision history for WWW-Session
 
 0.01    2011-04-23
         First version
+0.02	2011-04-23
+		Improved autosave method
+		POD fixes
+		
 
