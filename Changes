@@ -5,5 +5,8 @@ Revision history for WWW-Session
 0.02	2011-04-23
 		Improved autosave method
 		POD fixes
+0.03	2011-04-24
+		Fixed test to properly skip Memcache tests unless Cache::Memcached is installed
+		POD fixes
 		
 
