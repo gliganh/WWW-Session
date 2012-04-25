@@ -116,18 +116,17 @@ Another way to initialize the module :
                                     }
                                 };
                      
-
-=head1 Internal variables
-
-This modules uses some internal variables used to store the storage, serialization
-and field settings
-
 =cut
+
+#Internal variables
 my @storage_engines = ();
-my $serializer = __PACKAGE__->serialization_engine('JSON');
+my $serializer = undef;
 my $default_expiration = -1;
 my $fields_modifiers = {};
 my $autosave = 1;
+
+#Set up the default serializer
+__PACKAGE__->serialization_engine('JSON');
 
 =head1 Storing complex structures that contain objects
 
@@ -530,11 +529,11 @@ sub autosave {
 
 =head2 default_expiration_time
 
-Turn on/off the autosave feature (on by default)
+Setter/Getter for the default expiration time
 
 Usage :
 
-    WWW::Session->autosave(1);
+    WWW::Session->default_expiration_time(1800);
     
 =cut
 
@@ -774,7 +773,7 @@ sub import {
     }
 }
 
-=head2 Fast access to session keys
+=head1 Fast access to session keys
 
 Allows us to get/set session data directly by calling the field name as a method
 
@@ -804,7 +803,7 @@ sub AUTOLOAD {
     return $self->get($field);
 }
 
-=head2 Autosave
+=head1 Autosave
 
 If you set autosave to 1 the session will be saved before the object is 
 destroyed if any data has changed
