@@ -10,7 +10,7 @@ my $have_memcache = 1;
 eval "use Cache::Memcached";
 $have_memcache = 0 if $@;
 
-{
+SKIP: {
 	skip "Cache::Memcached is not installed",1 unless $have_memcache;
 	use_ok( 'WWW::Session::Storage::Memcached' );
 }
