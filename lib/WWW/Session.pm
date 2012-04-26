@@ -90,7 +90,7 @@ We can automaticaly deflate/inflate certain informations when we store / retriev
 from storage the session data (see setup_field() for more details):
 
     WWW::Session->setup_field( 'user',
-                               inflate => sub { return Some::Package->new( $_[0]->id() ) },
+                               inflate => sub { return Some::Package->new( $_[0] ) },
                                deflate => sub { $_[0]->id() }
                             );
 
@@ -111,7 +111,7 @@ Another way to initialize the module :
                                 expires => 3600,
                                 fields => {
                                     user => {
-                                        inflate => sub { return Some::Package->new( $_[0]->id() ) },
+                                        inflate => sub { return Some::Package->new( $_[0] ) },
                                         deflate => sub { $_[0]->id() },
                                     }
                                 };
@@ -144,7 +144,7 @@ objects you can take one of the following approaches :
     
     #and inflate it back like this
     
-    WWW::Session->setup_field('user',inflate => sub { return Some::Package->new( $_[0]->id() ) } );
+    WWW::Session->setup_field('user',inflate => sub { return Some::Package->new( $_[0] ) } );
     
 This method even thow it's slower, it reduces the size of the session object when stored, and 
 it ensures that if the object data changed since we saved it, this changes will be reflected in the 
@@ -602,7 +602,7 @@ Example :
 
     # if we have a user object (eg MyApp::User) we can inflate it like this
 
-    WWW::Session->setup_field('user',inflate => sub { return Some::Package->new( $_[0]->id() ) } );
+    WWW::Session->setup_field('user',inflate => sub { return Some::Package->new( $_[0] ) } );
 
 =head3 filters
 
