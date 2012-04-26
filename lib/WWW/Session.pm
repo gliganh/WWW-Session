@@ -732,18 +732,18 @@ Example :
                                     'File' => { path => '/tmp/sessions'},
                                     'Memcached' => { servers => ['127.0.0.1'] }
                                 ],
-                                serialization => 'Storable',
-                                expires => 3600,
-                                fields => {
-                                    user => {
-                                        inflate => sub { return Some::Package->new( $_[0]->id() ) },
-                                        deflate => sub { $_[0]->id() },
-                                        },
-                                    age => {
-                                        filter => [21..99],
-                                        }
-                                },
-                                autosave => 1;
+                     serialization => 'Storable',
+                     expires => 3600,
+                     fields => {
+                         user => {
+                             inflate => sub { return Some::Package->new( $_[0]->id() ) },
+                             deflate => sub { $_[0]->id() },
+                             },
+                         age => {
+                             filter => [21..99],
+                             }
+                     },
+                     autosave => 1;
 
 =cut
 
