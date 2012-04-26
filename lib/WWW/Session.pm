@@ -10,11 +10,11 @@ WWW::Session - WWW Sessions with multiple backends
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -311,7 +311,7 @@ sub set {
         die "Filter must be a hash ref or array ref or code ref" unless ref($filter);
         
         if (ref($filter) eq "ARRAY") {
-            if ($value ~~ @{$filter}) {
+            if (grep { $value eq $_ } @{$filter}) {
                 $validated = 1;
             }
         }
