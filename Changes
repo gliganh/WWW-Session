@@ -11,4 +11,6 @@ Revision history for WWW-Session
 0.04	2011-04-26
 		Fixed code to work with perl < 5.10 (removed smart operator)
 		POD improvements and fixes
+0.05	2011-04-27
+		Better POD and error messages
 
