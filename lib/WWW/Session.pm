@@ -128,7 +128,7 @@ my $autosave = 1;
 #Set up the default serializer
 __PACKAGE__->serialization_engine('JSON');
 
-=head1 Storing complex structures that contain objects
+=head1 SESSION & OBJECTS
 
 The default serialization engine is JSON, but JSON can't serialize objects by default,
 you will have to write more code to accomplish that. If your session data data contains 
@@ -161,6 +161,89 @@ between multiple machines could cause problems. We recommad using the 'JSON' eng
 inflate/defate (described above);
 
 =back
+
+=head1 STORAGE BACKENDS
+
+You can use one or more of the fallowing backends (the list might not be complete, more backends might be available on CPAN):
+
+=head2 File storage
+
+In you apllication module add the fallowing lines 
+
+    use Mojolicious::Plugin::WWWSession;
+
+    sub startup {
+    
+        ...
+    
+        #Overwrite session
+        $self->plugin( WWWSession => { storage => [File => {path => '.'}] } );
+
+        ...
+    }
+
+See WWW::Session::Storage::File for more details
+
+=head2 Database storage
+
+In you apllication module add the fallowing lines 
+
+    use Mojolicious::Plugin::WWWSession;
+
+    sub startup {
+    
+        ...
+    
+        #Overwrite session
+        $self->plugin( WWWSession => { storage => [ MySQL => { 
+                                                            dbh => $dbh,
+                                                            table => 'sessions',
+                                                            fields => {
+                                                                    sid => 'session_id',
+                                                                    expires => 'expires',
+                                                                    data => 'data'
+                                                            }
+                                                    ] 
+                                      } );
+
+        ...
+    }
+
+The "fields" hasref contains the mapping of session internal data to the column names from MySQL. 
+The keys are the session fields ("sid","expires" and "data") and must all be present. 
+
+The MySQL types of the columns should be :
+
+=over 4
+
+=item * sid => varchar(32)
+
+=item * expires => DATETIME or TIMESTAMP
+
+=item * data => text
+
+=back
+
+See WWW::Session::Storage::MySQL for more details
+
+=head2 Memcached storage
+
+In you apllication module add the fallowing lines 
+
+    use Mojolicious::Plugin::WWWSession;
+
+    sub startup {
+    
+        ...
+    
+        #Overwrite session
+        $self->plugin( WWWSession => { storage => ['Memcached' => {servers => ['127.0.0.1:11211']}] } );
+
+        ...
+    }
+
+See WWW::Session::Storage::Memcached for more details
+
 
 =head1 SUBROUTINES/METHODS
 
@@ -697,7 +780,80 @@ sub save {
     }
 }
 
-=head1 Private methods
+=head1 ACCESSING SESSION DATA
+
+Allows us to get/set session data directly by calling the field name as a method
+
+Example:
+
+    my $user = $session->user(); #same as $user = $session->get('user');
+    
+    #or 
+    
+    $session->age(21); #same as $session->set('age',21);
+
+=cut
+
+our $AUTOLOAD;
+sub AUTOLOAD {
+    my $self = shift;
+    my $value = shift;
+
+    my $field = $AUTOLOAD;
+
+    $field =~ s/.*:://;
+
+    if (defined $value) {
+        $self->set($field,$value);
+    }
+    
+    return $self->get($field);
+}
+
+
+=head1 AUTOSAVE FEATURE
+
+If you set autosave to 1 the session will be saved before the object is 
+destroyed if any data has changed
+
+BE CAREFULL : If you store complex structures only the changes made to direct 
+session keys will be detected. 
+
+Example :
+
+    #this change will be detected because it affects a direct session attribute
+    $session->age(21); 
+
+    #this changes won't be detected :
+    my $user = $session->user();
+    $user->{age} = 21;
+    
+You have two choices :
+
+=over 4
+
+=item 1 Make a change that can be detected
+
+    $session->some_random_field( time() );
+    
+=item 2 Save the session manually
+
+    $session->save();
+    
+=back
+    
+=cut
+
+sub DESTROY {
+    my $self = shift;
+    
+    if ($autosave && scalar(keys %{$self->{changed}})) {
+        $self->save();
+    }
+}
+
+
+=head1 PRIVATE METHODS
 
 =head2 load
 
@@ -773,76 +929,6 @@ sub import {
     }
 }
 
-=head1 Fast access to session keys
-
-Allows us to get/set session data directly by calling the field name as a method
-
-Example:
-
-    my $user = $session->user(); #same as $user = $session->get('user');
-    
-    #or 
-    
-    $session->age(21); #same as $session->set('age',21);
-
-=cut
-
-our $AUTOLOAD;
-sub AUTOLOAD {
-    my $self = shift;
-    my $value = shift;
-
-    my $field = $AUTOLOAD;
-
-    $field =~ s/.*:://;
-
-    if (defined $value) {
-        $self->set($field,$value);
-    }
-    
-    return $self->get($field);
-}
-
-=head1 Autosave
-
-If you set autosave to 1 the session will be saved before the object is 
-destroyed if any data has changed
-
-BE CAREFULL : If you store complex structures only the changes made to direct 
-session keys will be detected. 
-
-Example :
-
-    #this change will be detected because it affects a direct session attribute
-    $session->age(21); 
-
-    #this changes won't be detected :
-    my $user = $session->user();
-    $user->{age} = 21;
-    
-You have two choices :
-
-=over 4
-
-=item 1 Make a change that can be detected
-
-    $session->some_random_field( time() );
-    
-=item 2 Save the session manually
-
-    $session->save();
-    
-=back
-    
-=cut
-
-sub DESTROY {
-    my $self = shift;
-    
-    if ($autosave && scalar(keys %{$self->{changed}})) {
-        $self->save();
-    }
-}
 
 =head1 TIE INTERFACE
 
