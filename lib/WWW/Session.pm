@@ -45,7 +45,12 @@ Example:
     ...
     $session->sid(); #returns $sid
     $session->data(); #returns $hash_ref
-    
+
+    #set the user
+    $session->user($user);
+    #retrieve the user
+    my $user = $session->user();
+
     #returns undef if it doesn't exist or it's expired
     my $session = WWW::Session->find($sid); 
     
@@ -107,14 +112,14 @@ Another way to initialize the module :
     use WWW::Session storage => [ 'File' => { path => '/tmp/sessions'},
                                   'Memcached' => { servers => ['127.0.0.1'] }
                                 ],
-                                serialization => 'JSON',
-                                expires => 3600,
-                                fields => {
-                                    user => {
-                                        inflate => sub { return Some::Package->new( $_[0] ) },
-                                        deflate => sub { $_[0]->id() },
-                                    }
-                                };
+                     serialization => 'JSON',
+                     expires => 3600,
+                     fields => {
+                               user => {
+                                     inflate => sub { return Some::Package->new( $_[0] ) },
+                                     deflate => sub { $_[0]->id() },
+                                     }
+                               };
                      
 =cut
 
@@ -168,46 +173,30 @@ You can use one or more of the fallowing backends (the list might not be complet
 
 =head2 File storage
 
-In you apllication module add the fallowing lines 
+Here is how you can set up the File storage backend :
 
-    use Mojolicious::Plugin::WWWSession;
+    use WWW::Session;
 
-    sub startup {
-    
-        ...
-    
-        #Overwrite session
-        $self->plugin( WWWSession => { storage => [File => {path => '.'}] } );
-
-        ...
-    }
+    WWW::Session->add_storage('File', {path => '.'} );
 
 See WWW::Session::Storage::File for more details
 
 =head2 Database storage
 
-In you apllication module add the fallowing lines 
+If you want to store your session is MySQL do this :
 
-    use Mojolicious::Plugin::WWWSession;
+    use WWW::Session;
 
-    sub startup {
-    
-        ...
-    
-        #Overwrite session
-        $self->plugin( WWWSession => { storage => [ MySQL => { 
-                                                            dbh => $dbh,
-                                                            table => 'sessions',
-                                                            fields => {
-                                                                    sid => 'session_id',
-                                                                    expires => 'expires',
-                                                                    data => 'data'
-                                                            }
-                                                    ] 
-                                      } );
-
-        ...
-    }
+    WWW::Session->add_storage( 'MySQL', { 
+                                            dbh => $dbh,
+                                            table => 'sessions',
+                                            fields => {
+                                                    sid => 'session_id',
+                                                    expires => 'expires',
+                                                    data => 'data'
+                                            },
+                                        }
+                              );
 
 The "fields" hasref contains the mapping of session internal data to the column names from MySQL. 
 The keys are the session fields ("sid","expires" and "data") and must all be present. 
@@ -228,19 +217,12 @@ See WWW::Session::Storage::MySQL for more details
 
 =head2 Memcached storage
 
-In you apllication module add the fallowing lines 
+    To use memcached as a storage backend do this :
 
-    use Mojolicious::Plugin::WWWSession;
+    use WWW::Session;
 
-    sub startup {
-    
-        ...
-    
-        #Overwrite session
-        $self->plugin( WWWSession => { storage => ['Memcached' => {servers => ['127.0.0.1:11211']}] } );
+    WWW::Session->add_storage('Memcached', {servers => ['127.0.0.1:11211']} );
 
-        ...
-    }
 
 See WWW::Session::Storage::Memcached for more details
 
@@ -952,7 +934,7 @@ Example :
 sub TIEHASH {
     my ($class,@params) = @_;
     
-    return $class->new(@params);
+    return $class->find_or_create(@params);
 }
 
 sub STORE {
