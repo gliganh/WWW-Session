@@ -13,6 +13,8 @@ Revision history for WWW-Session
 		POD improvements and fixes
 0.05	2011-04-27
 		Better POD and error messages
-0.06	2011-04-03
+0.06	2011-05-03
 		Fixed bug in TIEHASH interface
 		Fixed POD for storage engines
+0.07	2011-05-04
+		Fixed bug in import method for field settings

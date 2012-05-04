@@ -10,11 +10,11 @@ WWW::Session::Storage::MySQL - MySQL storage for WWW::Session
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 
 =head1 SYNOPSIS
