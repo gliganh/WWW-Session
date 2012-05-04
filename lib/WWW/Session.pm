@@ -906,7 +906,7 @@ sub import {
     }
     if (defined $params{fields}) {
         foreach my $field (keys %{$params{fields}}) {
-            $class->setup_field($field,$params{fields}->{$field});
+            $class->setup_field($field,%{ $params{fields}->{$field} });
         }
     }
 }
