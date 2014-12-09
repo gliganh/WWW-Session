@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 13;
+use Test::More tests => 15;
 
 my $have_db = 1;
 
@@ -9,7 +9,7 @@ eval "use DBI";
 $have_db = 0 if $@;
 
 SKIP: {
-	skip "DBI is not installed", 13 unless $have_db;
+	skip "DBI is not installed", 15 unless $have_db;
 	
 	my $dbh;
     eval {
@@ -18,7 +18,7 @@ SKIP: {
 
  	skip "Cannot connect properly", 13 unless defined $dbh;
 	
-	$dbh->do("DROP TABLE www_session_test_table");
+	$dbh->do("DROP TABLE IF EXISTS www_session_test_table");
 
 	$dbh->do("
 		CREATE TABLE `www_session_test_table` (
@@ -94,10 +94,7 @@ SKIP: {
 
 		my $rstring = $storage->retrieve($sid);
 
-		is($rstring,undef,"String3 preserved");
-		
-		$rstring = $storage->retrieve($sid);
-		is($rstring,undef,"Session data removed after destory()");
+		is($rstring,undef,"String3 expired before we retrieved it");
 	}
 
 	{#utf8 test
@@ -114,6 +111,29 @@ SKIP: {
 		$storage->delete($sid);
 		$rstring = $storage->retrieve($sid);
 		is($rstring,undef,"Session data removed after destory()");
+	}
+	
+	
+	{#db cleanup
+		my $sid = 'random_session_id_'.int(rand(100));
+		
+		my $rstring = $storage->retrieve($sid);
+
+		is($rstring,undef,"Random session does not exist");
+		
+		ok($storage->save($sid,1,'bla'),'Save5 works');
+		
+		sleep 3;
+		
+		$storage->_reset_last_cleanup; #reset last cleanup counter
+		
+		is($storage->retrieve('abcd'),undef,'random key does not exist');#supposed to clean up $sid since it expired
+		
+		my $sth = $dbh->prepare("select * from www_session_test_table");
+		$sth->execute();
+		while (my $db_entry = $sth->fetchrow_arrayref) {		    
+		    ok(0,"Session ".$db_entry->[1]." exipred at ".$db_entry->[2]." but was cleaned up");
+		}
 	}
 	
 	$dbh->do("DROP TABLE www_session_test_table");

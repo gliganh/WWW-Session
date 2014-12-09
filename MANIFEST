@@ -19,3 +19,4 @@ t/session-tie.t
 t/storage-file.t
 t/storage-memcached.t
 t/storage-mysql.t
+t/triggers.t

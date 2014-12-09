@@ -8,13 +8,21 @@ use warnings;
 
 WWW::Session::Storage::MySQL - MySQL storage for WWW::Session
 
+=head1 DESCRIPTION
+
+MySQL backend for WWW:Session
+
 =head1 VERSION
 
-Version 0.07
+Version 0.11
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.11';
+
+#Internal variable that controls the expired session cleanup process
+#We do a cleanup not faster than every 10 minutes, when we try and retrieve
+my $last_cleanup = 0;
 
 
 =head1 SYNOPSIS
@@ -110,13 +118,17 @@ Stores the given information into the database
 sub save {
     my ($self,$sid,$expires,$string) = @_;
 
-    my $query = sprintf('INSERT INTO %s SET %s=?, %s=?,%s=FROM_UNIXTIME(?)',
+	$expires = 60*60*24*365*20 if $expires == -1;
+
+    my $query = sprintf('INSERT INTO %s SET %s=?, %s=?,%s=FROM_UNIXTIME(?) ON DUPLICATE KEY UPDATE %s=?, %s=FROM_UNIXTIME(?)',
                         $self->{table},
-                        @{$self->{fields}}{qw(sid data expires)}
+                        @{$self->{fields}}{qw(sid data expires)},
+						@{$self->{fields}}{qw(data expires)}
                         );
 
     my $sth = $self->{dbh}->prepare($query);
-    my $rv = $sth->execute($sid,$string,time() + ( $expires == -1 ? 60*60*24*365*20 : $expires ) );
+
+    my $rv = $sth->execute($sid,$string,time() + $expires, $string,time() + $expires);
     
     return $rv;
 }
@@ -129,6 +141,12 @@ the string containing the serialized data
 =cut
 sub retrieve {
     my ($self,$sid) = @_;
+
+    if ( $last_cleanup + 600 < time() ) {
+        $last_cleanup = time();
+        my $del_sth = $self->{dbh}->prepare(sprintf("DELETE FROM %s WHERE %s < NOW()",$self->{table},$self->{fields}{expires}));
+        $del_sth->execute()
+    }
     
     my $query = sprintf('SELECT %s as sid,%s as data,UNIX_TIMESTAMP(%s) as expires FROM %s WHERE %s=?',
                         @{$self->{fields}}{qw(sid data expires)},
@@ -190,6 +208,15 @@ sub _check_table_structure {
                 unless  exists $table_fields->{$self->{fields}->{sid}} &&
                         exists $table_fields->{$self->{fields}->{expires}} &&
                         exists $table_fields->{$self->{fields}->{data}};
+}
+
+=head2 _reset_last_cleanup
+
+Resets the last DB cleanup timer, forcing all expired sessions to be removed when the next session is retrieved
+
+=cut
+sub _reset_last_cleanup {
+    $last_cleanup = 0;
 }
 
 =head1 AUTHOR

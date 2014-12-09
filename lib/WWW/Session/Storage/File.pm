@@ -8,13 +8,17 @@ use warnings;
 
 WWW::Session::Storage::File - File storage engine for WWW::Session
 
+=head1 DESCRIPTION
+
+File backend for WWWW::Session
+
 =head1 VERSION
 
-Version 0.07
+Version 0.11
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.11';
 
 
 =head1 SYNOPSIS

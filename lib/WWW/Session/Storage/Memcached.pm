@@ -4,19 +4,30 @@ use 5.006;
 use strict;
 use warnings;
 
-use Cache::Memcached;
+BEGIN {
+    eval "use Cache::Memcached;";
+    
+    if ($@) {
+        warn "You must install Cache::Memcached module from CPAN to use the memcached storage engine!"
+    }
+}
+
 
 =head1 NAME
 
 WWW::Session::Storage::Memcached - Memcached storage for WWW::Session
 
+=head1 DESCRIPTION
+
+Memcached backend for WWW::Session
+
 =head1 VERSION
 
-Version 0.07
+Version 0.11
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.11';
 
 
 =head1 SYNOPSIS

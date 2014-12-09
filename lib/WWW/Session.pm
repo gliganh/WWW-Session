@@ -6,15 +6,20 @@ use warnings;
 
 =head1 NAME
 
-WWW::Session - WWW Sessions with multiple backends and object serialization
+WWW::Session - Generic session management engine for web applications
+
+=head1 DESCRIPTION
+
+Generic session management engine for web applications with multiple backends, 
+object serialization and data validation
 
 =head1 VERSION
 
-Version 0.07
+Version 0.11
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.11';
 
 =head1 SYNOPSIS
 
@@ -365,6 +370,8 @@ sub set {
         $value = $fields_modifiers->{$field}->{default};
     }
     
+    $self->run_trigger('before_set_value',$field,$value,$self->get($field));
+    
     my $validated = 1;
     
     if ( exists $fields_modifiers->{$field} && defined $fields_modifiers->{$field}->{filter} ) {
@@ -397,6 +404,8 @@ sub set {
     if ($validated) {
         $self->{data}->{$field} = $value;
         $self->{changed}->{$field} = 1;
+        
+        $self->run_trigger('after_set_value',$field,$value);
     }
     else {
         warn "Value $value failed validation for key $field";
@@ -437,9 +446,16 @@ Usage :
 
 =cut
 sub delete {
-    my ($self,$key) = @_;
+    my ($self,$field) = @_;
     
-    return delete $self->{data}->{$key};
+    $self->run_trigger('before_delete',$field,$self->get($field));
+    
+    $self->{changed}->{$field} = 1;
+    my $rv = delete $self->{data}->{$field};
+    
+    $self->run_trigger('after_delete',$field,$self->get($field));
+        
+    return $rv;
 }
 
 =head2 sid
@@ -679,7 +695,7 @@ Filters can be :
 
 =item * array ref
 
-In this case when we call C<$session->set($field,$value)> the values will have to be one of the 
+In this case when we call $session->set($field,$value) the values will have to be one of the 
 values from the array ref , or the operation will fail
 
 Example :
@@ -712,8 +728,37 @@ Example :
 
 =back
 
-Note: The entire setup for a field must be done in a single call to setup_field() or the previous 
-settings will be overwritten!
+=head3 triggers
+
+Triggers allow you to execute a code ref when certain events happen on the key.
+
+The return values from the triggers are completely ignored.
+
+Available triggers are:
+
+=over 4 
+
+=item * before_set_value
+
+Executed before the value is actually storred on the code. Arguments sent to the code ref 
+are : session object , new value, old value - in this order
+
+=item * after_set_value
+
+Executed after the new value is set on the session object. Arguments sent to the code ref 
+are : session object, new value
+
+=item * before_delete
+
+Executed before the key is removed from the session object. Arguments sent to the code ref
+are : session object, current_value
+
+=item * after_delete
+
+Executed after the key is removed from the session object. Arguments sent to the code ref
+are : session object, previous_value
+
+=back
 
 Example :
 
@@ -722,6 +767,9 @@ Example :
                             filter => { isa => "MyApp::User" },
                             deflate => sub { $_[0]->id() },
                             inflate => sub { return MyApp::User->find($_[0]) }
+                            trigger => { before_set_value => sub { warn "About to set the user },
+                                         after_delete => sub { ... },
+                                        }
                             );
 
 =cut
@@ -729,7 +777,9 @@ Example :
 sub setup_field {
     my ($self,$field,%settings) = @_;
     
-    $fields_modifiers->{$field} = \%settings;
+    while (my ($key,$val)  = each %settings) {
+        $fields_modifiers->{$field}{$key} = $val;
+    }
 }
 
 =head2 save
@@ -908,6 +958,26 @@ sub import {
         foreach my $field (keys %{$params{fields}}) {
             $class->setup_field($field,%{ $params{fields}->{$field} });
         }
+    }
+}
+
+=head2 run_trigger
+
+Runs a trigger for the given field
+
+=cut
+sub run_trigger {
+    my $self = shift;
+    my $trigger = shift;
+    my $field = shift;
+    
+    if (   exists $fields_modifiers->{$field}
+        && defined $fields_modifiers->{$field}{trigger}
+        && defined $fields_modifiers->{$field}{trigger}{$trigger} )
+    {
+        my $trigger = $fields_modifiers->{$field}{trigger}{$trigger};
+        die "WWW::Session triggers must be code refs!" unless ref( $trigger ) && ref( $trigger ) eq "CODE";
+        $trigger->( $self, @_ );
     }
 }
 

@@ -10,13 +10,17 @@ use Storable qw(freeze thaw);
 
 WWW::Session::Serialization::Storable - Serialization module for WWW::Session with Storable backend
 
+=head1 DESCRIPTION
+
+Storable serialization engine for WWW::Session objects
+
 =head1 VERSION
 
-Version 0.07
+Version 0.11
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.11';
 
 
 =head1 SYNOPSIS
