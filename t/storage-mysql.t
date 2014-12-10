@@ -16,7 +16,7 @@ SKIP: {
         $dbh = DBI->connect("DBI:mysql:host=127.0.0.1:db=test","root","");
     };
 
- 	skip "Cannot connect properly", 13 unless defined $dbh;
+ 	skip "Cannot connect properly", 15 unless defined $dbh;
 	
 	$dbh->do("DROP TABLE IF EXISTS www_session_test_table");
 

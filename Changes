@@ -28,3 +28,5 @@ Revision history for WWW-Session
 0.11	2014-12-9
     Implemented triggers on set/delete value
     Fixed problem with MySQL backend that caused expired session to be kept forever
+0.12	2014-12-9
+    Fixed test for MySQL storage
